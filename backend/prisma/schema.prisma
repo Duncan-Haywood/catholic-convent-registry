@@ -1,0 +1,393 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  avatar    String?
+  role      UserRole @default(DONOR)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  donations       Donation[]
+  prayerRequests  PrayerRequest[]
+  massIntentions  MassIntention[]
+  subscriptions   Subscription[]
+  communityFollows CommunityFollow[]
+  profile         DonorProfile?
+  adminProfile    AdminProfile?
+
+  @@map("users")
+}
+
+model DonorProfile {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Preferences
+  preferredCurrency String @default("USD")
+  donationGoal      Decimal? @db.Decimal(10, 2)
+  interests         String[] // Array of interests/apostolates
+  prayerCommitment  String? // Daily, weekly, monthly prayer commitments
+  
+  // Spiritual preferences
+  favoriteSaints    String[]
+  liturgicalPrefs   String[] // Latin, vernacular, etc.
+  
+  // Communication preferences
+  emailNotifications Boolean @default(true)
+  newsletter        Boolean @default(true)
+  impactReports     Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("donor_profiles")
+}
+
+model AdminProfile {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  permissions String[] // Array of admin permissions
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_profiles")
+}
+
+model ReligiousCommunity {
+  id          String            @id @default(cuid())
+  name        String
+  displayName String
+  slug        String            @unique
+  description String?
+  mission     String?
+  charism     ReligiousCharism
+  apostolate  String[]          // Array of apostolates
+  
+  // Contact Information
+  email       String?
+  phone       String?
+  website     String?
+  address     Address?
+  
+  // Community Details
+  foundedYear    Int?
+  foundedLocation String?
+  motherHouse    String?
+  currentSize    Int? // Number of members
+  
+  // Verification
+  verified       Boolean @default(false)
+  verifiedBy     String? // Admin who verified
+  verificationDate DateTime?
+  
+  // Media
+  logo           String?
+  coverImage     String?
+  images         String[]
+  
+  // Status
+  active         Boolean @default(true)
+  acceptingGifts Boolean @default(true)
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  donations       Donation[]
+  needs           CommunityNeed[]
+  prayerRequests  PrayerRequest[]
+  massIntentions  MassIntention[]
+  impactReports   ImpactReport[]
+  followers       CommunityFollow[]
+  wishListItems   WishListItem[]
+
+  @@map("religious_communities")
+}
+
+model Address {
+  id            String @id @default(cuid())
+  street        String
+  city          String
+  state         String?
+  postalCode    String?
+  country       String
+  latitude      Float?
+  longitude     Float?
+  
+  // Relationships
+  communityId   String? @unique
+  community     ReligiousCommunity? @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model CommunityNeed {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  category    NeedCategory
+  priority    Priority    @default(MEDIUM)
+  targetAmount Decimal?   @db.Decimal(10, 2)
+  currentAmount Decimal   @default(0) @db.Decimal(10, 2)
+  currency    String      @default("USD")
+  deadline    DateTime?
+  fulfilled   Boolean     @default(false)
+  active      Boolean     @default(true)
+  
+  // Relationships
+  communityId String
+  community   ReligiousCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  donations   Donation[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("community_needs")
+}
+
+model WishListItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String
+  priority    Priority @default(MEDIUM)
+  estimatedCost Decimal? @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  quantity    Int      @default(1)
+  fulfilled   Boolean  @default(false)
+  
+  // Relationships
+  communityId String
+  community   ReligiousCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wish_list_items")
+}
+
+model Donation {
+  id              String         @id @default(cuid())
+  amount          Decimal        @db.Decimal(10, 2)
+  currency        String         @default("USD")
+  donationType    DonationType   @default(GENERAL)
+  status          DonationStatus @default(PENDING)
+  recurring       Boolean        @default(false)
+  recurringPeriod String?        // monthly, quarterly, annually
+  anonymous       Boolean        @default(false)
+  
+  // Payment details
+  stripePaymentId String?
+  paymentMethod   String?
+  processingFee   Decimal?       @db.Decimal(10, 2)
+  netAmount       Decimal        @db.Decimal(10, 2)
+  
+  // Dedication
+  dedicatedTo     String?
+  dedicationMessage String?
+  
+  // Relationships
+  donorId         String
+  donor           User           @relation(fields: [donorId], references: [id])
+  communityId     String
+  community       ReligiousCommunity @relation(fields: [communityId], references: [id])
+  needId          String?
+  need            CommunityNeed? @relation(fields: [needId], references: [id])
+  subscriptionId  String?
+  subscription    Subscription?  @relation(fields: [subscriptionId], references: [id])
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("donations")
+}
+
+model Subscription {
+  id              String            @id @default(cuid())
+  amount          Decimal           @db.Decimal(10, 2)
+  currency        String            @default("USD")
+  period          String            // monthly, quarterly, annually
+  status          SubscriptionStatus @default(ACTIVE)
+  nextPayment     DateTime?
+  lastPayment     DateTime?
+  
+  // Stripe subscription details
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+  
+  // Relationships
+  donorId         String
+  donor           User           @relation(fields: [donorId], references: [id])
+  communityId     String
+  community       ReligiousCommunity @relation(fields: [communityId], references: [id])
+  donations       Donation[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscriptions")
+}
+
+model PrayerRequest {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String?
+  urgent      Boolean  @default(false)
+  fulfilled   Boolean  @default(false)
+  
+  // Relationships
+  requesterId String
+  requester   User     @relation(fields: [requesterId], references: [id])
+  communityId String?
+  community   ReligiousCommunity? @relation(fields: [communityId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("prayer_requests")
+}
+
+model MassIntention {
+  id          String   @id @default(cuid())
+  intention   String
+  requestedBy String
+  amount      Decimal? @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  massDate    DateTime?
+  fulfilled   Boolean  @default(false)
+  
+  // Relationships
+  requesterId String
+  requester   User     @relation(fields: [requesterId], references: [id])
+  communityId String
+  community   ReligiousCommunity @relation(fields: [communityId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("mass_intentions")
+}
+
+model ImpactReport {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  images      String[]
+  published   Boolean  @default(false)
+  
+  // Relationships
+  communityId String
+  community   ReligiousCommunity @relation(fields: [communityId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("impact_reports")
+}
+
+model CommunityFollow {
+  id String @id @default(cuid())
+  
+  // Relationships
+  userId      String
+  user        User               @relation(fields: [userId], references: [id])
+  communityId String
+  community   ReligiousCommunity @relation(fields: [communityId], references: [id])
+  
+  createdAt DateTime @default(now())
+
+  @@unique([userId, communityId])
+  @@map("community_follows")
+}
+
+// Enums
+enum UserRole {
+  DONOR
+  ADMIN
+  COMMUNITY_ADMIN
+  SUPER_ADMIN
+}
+
+enum ReligiousCharism {
+  APOSTOLIC
+  CONTEMPLATIVE
+  MENDICANT
+  MONASTIC
+  SECULAR
+  MIXED
+}
+
+enum NeedCategory {
+  INFRASTRUCTURE
+  EDUCATION
+  HEALTHCARE
+  FORMATION
+  MINISTRY
+  EMERGENCY
+  MAINTENANCE
+  EQUIPMENT
+  TECHNOLOGY
+  FOOD_NUTRITION
+  CLOTHING
+  TRANSPORTATION
+  SPIRITUAL_RESOURCES
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DonationType {
+  GENERAL
+  SPECIFIC_NEED
+  MASS_INTENTION
+  MEMORIAL
+  THANKSGIVING
+  BIRTHDAY
+  ANNIVERSARY
+  HOLIDAY
+}
+
+enum DonationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+} 
