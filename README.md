@@ -63,9 +63,18 @@ catholic-convent-registry/
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18.x or higher
+- PostgreSQL 15 or higher
+- Redis 7 or higher
+- npm or yarn package manager
+
+### Installation
+
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/YOUR_USERNAME/catholic-convent-registry.git
    cd catholic-convent-registry
    ```
 
@@ -76,20 +85,69 @@ catholic-convent-registry/
 
 3. **Set up environment variables**
    ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your configuration
+   cp .env.example .env
+   # Edit .env with your configuration
    ```
 
-4. **Initialize database**
+4. **Set up the database**
    ```bash
+   # Start PostgreSQL and Redis services
+   docker-compose up -d postgres redis
+
+   # Run database migrations
+   cd backend
    npm run db:migrate
-   npm run db:seed
+   npm run db:seed  # Optional: seed with sample data
+   cd ..
    ```
 
 5. **Start development servers**
    ```bash
+   # Start all services
    npm run dev
+
+   # Or start services individually:
+   # Terminal 1 - Backend
+   npm run dev:backend
+
+   # Terminal 2 - Frontend
+   npm run dev:frontend
    ```
+
+6. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001
+   - API Documentation: http://localhost:3001/api-docs
+
+### Using Docker
+
+For a complete development environment with all dependencies:
+
+```bash
+# Start all services
+docker-compose up
+
+# Run in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+## Configuration
+
+Create a `.env` file based on `.env.example` with the following required variables:
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+- `JWT_SECRET`: Secret key for JWT token generation
+- `STRIPE_SECRET_KEY`: Stripe API secret key
+- `SENDGRID_API_KEY`: SendGrid API key for emails
+
+See `.env.example` for a complete list of configuration options.
 
 ## Core Entities
 
@@ -162,11 +220,29 @@ catholic-convent-registry/
 
 ## Contributing
 
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run backend tests
+npm run test:backend
+
+# Run frontend tests
+npm run test:frontend
+
+# Run tests in watch mode
+npm run test:watch
+```
 
 ## Security Considerations
 
@@ -182,7 +258,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-For support, email support@catholicconventregistry.org or join our Discord community.
+For support, please open an issue in this repository.
 
 ## Mission Statement
 

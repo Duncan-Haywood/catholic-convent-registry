@@ -50,7 +50,7 @@ services:
       PORT: 3001
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/catholic_convent_registry
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-jwt-secret-here
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
       FRONTEND_URL: http://localhost:3000
     ports:
       - '3001:3001'

@@ -339,7 +339,7 @@ npm run type-check
 
 - **Documentation**: Check the README.md file
 - **Issues**: Create an issue on GitHub
-- **Email**: support@catholicconventregistry.org
+- **Email**: [Contact through GitHub Issues]
 
 ## License
 
