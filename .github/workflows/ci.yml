@@ -63,7 +63,7 @@ jobs:
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/catholic_convent_registry_test
         REDIS_URL: redis://localhost:6379
-        JWT_SECRET: test-jwt-secret
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test-jwt-secret-for-ci' }}
         NODE_ENV: test
       run: |
         cd backend
@@ -73,7 +73,7 @@ jobs:
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/catholic_convent_registry_test
         REDIS_URL: redis://localhost:6379
-        JWT_SECRET: test-jwt-secret
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test-jwt-secret-for-ci' }}
         NODE_ENV: test
       run: npm run test:backend
 
